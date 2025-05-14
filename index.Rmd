@@ -1,152 +1,36 @@
 ---
-title: "U.S. Federal and State Fiscal Progressivity"
+title: "Untitled"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
-    social: menu
-    source_code: embed
-runtime: shiny
-# TO-DO: right now initially displays blank, fix default state level
+    vertical_layout: fill
 ---
 
-```{r global, include=FALSE}
-pacman::p_load(tidyverse, psych, xtable, readxl, data.table, flexdashboard, highcharter, viridisLite,shiny,rtools)
-
-#setwd("C:/Users/melan/Dropbox/SOI_tables/inc_untaxed/dashboard")
-setwd("/Users/johannesfleck/Dropbox/Research/Fiscal_unions_FHSV/SOI_tables/inc_untaxed/dashboard")
-
-# empty dataframe
-df <- data.frame(matrix(ncol = 10, nrow = 0))
-colnames(df) <- c("Statename" , "tau", "lambda", "lambda_hat", "T", "T_hat", 
-                  "Year", "Level", "Program","Measure")
-
-# dictionary of level/measure names
-level_names <- c("state" = "State", "federal" = "Federal", "state_federal" = "State+Federal")
-measure_names <- c("HSV Log OLS" = "Progressivity: tau (HSV, OLS)", 
-                   "HSV PPML" = "Progressivity: tau (HSV, PPML)",
-                   "HSVT NLLSQ" = "Progressivity: tau (HSV-T, OLS)")
-
-# load data in 'global' chunk so it can be shared by all users of the dashboard
-# 2005/06, 2010/11 and 2015/16
-for (year1 in c(2005,2010,2015)){ # 
-  for (measure in c("HSV Log OLS","HSV PPML","HSVT NLLSQ")){
-    # start with state so can extract state names for federal
-    for (level in c("state","federal","state_federal")){
-      print(year1)
-      print(measure)
-      print(level)
-      
-      year2 <- year1 + 1
-      new_df <- read_excel(paste0(level,"_",year1,"_",year2,".xlsx"),sheet = measure)
-      
-      # fill in missing for parameters if don't correspond to model
-      if (measure == "HSVT NLLSQ"){
-        new_df$lambda_hat <- NA
-      } else{
-        new_df$T <- NA
-        new_df$T_hat <- NA
-      }
-      
-      # for federal level, use same estimated parameter for all states
-      if (level == "federal"){
-        statenames <- unique(df$Statename)
-        new_df <- new_df[rep(seq_len(nrow(new_df)), length(statenames)), ] # repeat number
-        new_df$Statename <- statenames # column with state names
-      }
-      
-      new_df$Year <- paste0(year1,"-",year2)
-      new_df$Level <- level_names[level]
-      new_df$Program <- "All taxes and transfers" # TO-DO
-      new_df$Measure <- measure_names[measure]
-      
-      df<- rbind(df,new_df)
-    }
-  }
-}
-
-thm <- 
-  hc_theme(
-    colors = c("#1a6ecc", "#434348", "#90ed7d"),
-    chart = list(
-      backgroundColor = "transparent",
-      style = list(fontFamily = "Source Sans Pro")
-    ),
-    xAxis = list(
-      gridLineWidth = 1
-    )
-  )
+```{r setup, include=FALSE}
+library(flexdashboard)
 ```
 
-## Inputs {.sidebar}
+Column {data-width=650}
+-----------------------------------------------------------------------
 
-```{r}
-selectInput('year', 'Year', unique(df$Year))
-selectInput('level', 'Level', unique(df$Level))
-selectInput('measure', 'Measure', unique(df$Measure))
-
-radioButtons("level", "Level:",
-               c('All taxes and transfers' = "alltaxesandtransfers",
-                 'All taxes' = "alltaxes",
-                 "All transfers" = "alltransfers",
-                 "Income taxes" = "incometaxes"),
-             selected="alltaxesandtransfers")
-```
-
-```{r}
-# Create placeholder for the downloadButton
-uiOutput("downloadUI")
-```
+### Chart A
 
 ```{r}
 
-# Add download handling
-downloadHandler(
-  filename = function() {
-    "test.csv" # TO-DO: RENAME
-  },
-  content = function(file) {
-    write.csv(df, file, row.names = FALSE)
-  }
-)
 ```
 
-## Outputs
+Column {data-width=350}
+-----------------------------------------------------------------------
 
-### Tax Progressivity
+### Chart B
 
 ```{r}
-data("usgeojson")
-
-# aes of the legend
-n <- 3
-# min max of legend (MAKE FLEXIBLE?)
-max_stop <- 0.4 # max(df$tau)
-min_stop <- -0.2 #min(df$tau)
-
-# TO-DO: FIX LEGEND
-colstops <- data.frame(
-  q = seq(min_stop,max_stop,0.2),
-  c = substring(viridis(n + 1), 0, 7)) %>%
-  list_parse2()
-
-# filter to year from drop down
-filtered_df <- reactive({
-  df[(df$Year==input$year) & (df$Measure == input$measure) & (df$Level == input$level),] 
-})
-
-# render map  
-renderHighchart({
-
-  highchart() %>% hc_add_series_map(usgeojson, filtered_df(), name = "Tau",
-                    value = "tau", joinBy = c("woename", "Statename"),
-                    dataLabels = list(enabled = TRUE,
-                                      format = '{point.properties.postalcode}')) %>%
-  hc_colorAxis(stops = colstops) %>%
-  hc_legend(valueDecimals = 0, valueSuffix = "%") %>%
-  hc_mapNavigation(enabled = TRUE) %>%
-  hc_add_theme(thm)
-
-})
-
 
 ```
+
+### Chart C
+
+```{r}
+
+```
+
